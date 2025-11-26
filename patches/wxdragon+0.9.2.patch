@@ -1,0 +1,147 @@
+diff -ruN a/src/clipboard.rs b/src/clipboard.rs
+--- a/src/clipboard.rs	2025-10-19 20:38:53
++++ b/src/clipboard.rs	2025-11-26 12:29:54
+@@ -187,7 +187,7 @@
+         };
+ 
+         if success {
+-            let c_str = unsafe { std::ffi::CStr::from_ptr(buffer.as_ptr()) };
++            let c_str = unsafe { std::ffi::CStr::from_ptr(buffer.as_ptr() as *const std::os::raw::c_char) };
+             Some(c_str.to_string_lossy().into_owned())
+         } else {
+             None
+diff -ruN a/src/data_object.rs b/src/data_object.rs
+--- a/src/data_object.rs	2025-10-19 20:38:53
++++ b/src/data_object.rs	2025-11-26 12:30:00
+@@ -110,13 +110,13 @@
+         let success = unsafe {
+             ffi::wxd_TextDataObject_GetText(
+                 self.data_object.as_ptr() as *mut ffi::wxd_TextDataObject_t,
+-                buffer.as_mut_ptr(),
++                buffer.as_mut_ptr() as *mut std::os::raw::c_char,
+                 buffer.len() as i32,
+             )
+         };
+ 
+         if success > 0 {
+-            let c_str = unsafe { std::ffi::CStr::from_ptr(buffer.as_ptr()) };
++            let c_str = unsafe { std::ffi::CStr::from_ptr(buffer.as_ptr() as *const std::os::raw::c_char) };
+             c_str.to_string_lossy().into_owned()
+         } else {
+             String::new()
+@@ -217,7 +217,7 @@
+         };
+ 
+         if success > 0 {
+-            let c_str = unsafe { std::ffi::CStr::from_ptr(buffer.as_ptr()) };
++            let c_str = unsafe { std::ffi::CStr::from_ptr(buffer.as_ptr() as *const std::os::raw::c_char) };
+             c_str.to_string_lossy().into_owned()
+         } else {
+             String::new()
+diff -ruN a/src/dnd/droptarget.rs b/src/dnd/droptarget.rs
+--- a/src/dnd/droptarget.rs	2025-10-19 20:38:53
++++ b/src/dnd/droptarget.rs	2025-11-26 12:26:06
+@@ -503,7 +503,7 @@
+             let len = ffi::wxd_ArrayString_GetString(
+                 filenames_ptr as *mut _,
+                 i,
+-                buffer.as_mut_ptr() as *mut i8,
++                buffer.as_mut_ptr() as *mut std::os::raw::c_char,
+                 buffer.len() as i32,
+             );
+ 
+diff -ruN a/src/font.rs b/src/font.rs
+--- a/src/font.rs	2025-10-19 20:38:53
++++ b/src/font.rs	2025-11-26 12:29:03
+@@ -165,13 +165,13 @@
+         let len = unsafe {
+             ffi::wxd_Font_GetFaceName(
+                 self.ptr,
+-                buffer.as_mut_ptr() as *mut i8,
++                buffer.as_mut_ptr() as *mut std::os::raw::c_char,
+                 buffer.len() as i32,
+             )
+         };
+         if len > 0 {
+             buffer.resize((len + 1) as usize, 0);
+-            let c_str = unsafe { CStr::from_ptr(buffer.as_ptr() as *const i8) };
++            let c_str = unsafe { CStr::from_ptr(buffer.as_ptr() as *const std::os::raw::c_char) };
+             c_str.to_string_lossy().into_owned()
+         } else {
+             String::new()
+diff -ruN a/src/sysopt.rs b/src/sysopt.rs
+--- a/src/sysopt.rs	2025-10-19 20:38:53
++++ b/src/sysopt.rs	2025-11-26 12:28:39
+@@ -31,13 +31,13 @@
+             let mut buffer = vec![0u8; len as usize + 1];
+             let actual_len = crate::ffi::wxd_SystemOptions_GetOption_String(
+                 name.as_ptr(),
+-                buffer.as_mut_ptr() as *mut i8,
++                buffer.as_mut_ptr() as *mut std::os::raw::c_char,
+                 buffer.len() as ::std::os::raw::c_int,
+             );
+             if actual_len <= 0 {
+                 return Some(String::new());
+             }
+-            let cstr = std::ffi::CStr::from_ptr(buffer.as_ptr() as *const i8);
++            let cstr = std::ffi::CStr::from_ptr(buffer.as_ptr() as *const std::os::raw::c_char);
+             Some(cstr.to_string_lossy().into_owned())
+         }
+     }
+diff -ruN a/src/widgets/dataview/tree_ctrl.rs b/src/widgets/dataview/tree_ctrl.rs
+--- a/src/widgets/dataview/tree_ctrl.rs	2025-10-19 20:38:53
++++ b/src/widgets/dataview/tree_ctrl.rs	2025-11-26 12:28:22
+@@ -337,7 +337,7 @@
+                 let c_str_borrowed = std::ffi::CStr::from_ptr(c_str);
+                 let rust_string = c_str_borrowed.to_string_lossy().into_owned();
+                 // Now free the C string using the proper FFI function
+-                ffi::wxd_free_string(c_str as *mut i8);
++                ffi::wxd_free_string(c_str as *mut std::os::raw::c_char);
+                 rust_string
+             }
+         }
+diff -ruN a/src/widgets/editable_listbox.rs b/src/widgets/editable_listbox.rs
+--- a/src/widgets/editable_listbox.rs	2025-10-19 20:38:53
++++ b/src/widgets/editable_listbox.rs	2025-11-26 12:27:44
+@@ -193,12 +193,15 @@
+             .map(|s| CString::new(*s).unwrap_or_default())
+             .collect();
+ 
+-        let mut c_ptrs: Vec<*const i8> = c_strings.iter().map(|s| s.as_ptr()).collect();
++        let mut c_ptrs: Vec<*const std::os::raw::c_char> = c_strings
++            .iter()
++            .map(|s| s.as_ptr() as *const std::os::raw::c_char)
++            .collect();
+ 
+         unsafe {
+             ffi::wxd_EditableListBox_SetStrings(
+                 self.window.handle_ptr(),
+-                c_ptrs.as_mut_ptr(),
++                c_ptrs.as_mut_ptr() as *mut *const std::os::raw::c_char,
+                 c_strings.len() as i32,
+             )
+         }
+diff -ruN a/src/widgets/list_ctrl.rs b/src/widgets/list_ctrl.rs
+--- a/src/widgets/list_ctrl.rs	2025-10-19 20:38:53
++++ b/src/widgets/list_ctrl.rs	2025-11-26 12:26:09
+@@ -423,7 +423,7 @@
+                 self.as_list_ctrl_ptr(),
+                 index as c_longlong,
+                 col,
+-                buffer.as_mut_ptr() as *mut i8,
++                buffer.as_mut_ptr() as *mut std::os::raw::c_char,
+                 needed_len as i32,
+             );
+             if actual_len <= 0 {
+diff -ruN a/src/widgets/treebook.rs b/src/widgets/treebook.rs
+--- a/src/widgets/treebook.rs	2025-10-19 20:38:53
++++ b/src/widgets/treebook.rs	2025-11-26 12:25:48
+@@ -221,7 +221,7 @@
+             let copied_len_with_null = ffi::wxd_Treebook_GetPageText(
+                 self.as_ptr(),
+                 n,
+-                buffer.as_mut_ptr() as *mut i8,
++                buffer.as_mut_ptr() as *mut std::os::raw::c_char,
+                 buffer_size as i32,
+             );
+ 
