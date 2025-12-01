@@ -247,6 +247,9 @@ impl Signer {
         certificate: Option<&CertificateIdentity>,
         provisioning_files: &[MobileProvision],
     ) -> Result<(), Error> {
+        if *bundle.bundle_type() == BundleType::Unknown {
+            return Ok(());
+        }
 
         let mut settings = Self::build_base_settings(certificate)?;
 
@@ -294,12 +297,8 @@ impl Signer {
             }
         }
 
-        // Set entitlements (will be empty dict for dylibs/frameworks)
         settings.set_entitlements_xml(SettingsScope::Main, entitlements_xml)?;
-
-        if *bundle.bundle_type() != BundleType::Unknown {
-            UnifiedSigner::new(settings).sign_path_in_place(bundle.bundle_dir())?;
-        }
+        UnifiedSigner::new(settings).sign_path_in_place(bundle.bundle_dir())?;
 
         Ok(())
     }
