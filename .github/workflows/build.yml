@@ -283,11 +283,12 @@ jobs:
       - name: Setup Sparkle
         id: get_version
         run: |
-          curl -L -o Sparkle-2.4.2.tar.xz https://github.com/sparkle-project/Sparkle/releases/download/2.4.2/Sparkle-2.4.2.tar.xz
-          tar -xJf Sparkle-2.4.2.tar.xz
+          curl -L -o Sparkle-2.8.1.tar.xz https://github.com/sparkle-project/Sparkle/releases/download/2.8.1/Sparkle-2.8.1.tar.xz
+          tar -xJf Sparkle-2.8.1.tar.xz
           chmod +x ./bin/generate_appcast
           echo ${{ secrets.SPARKLE_PRIV_KEY_MAC }} > sparkle_priv_key
-          ./bin/generate_appcast --ed-key-file ./sparkle_priv_key --download-url-prefix https://github.com/khcrysalis/PlumeImpactor/releases/latest/download/ build/out/
+          ./generate_keys -f ./sparkle_priv_key
+          ./bin/generate_appcast --download-url-prefix https://github.com/khcrysalis/PlumeImpactor/releases/latest/download/ build/out/
 
       - name: Upload Universal DMG
         uses: actions/upload-artifact@v4
