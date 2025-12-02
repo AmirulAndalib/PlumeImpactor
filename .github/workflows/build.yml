@@ -125,6 +125,35 @@ jobs:
           choco install nsis.portable
           makensis build/nsis/installer.nsi
           mv build/nsis/PlumeInstaller.exe build/out/${{ env.BINARY_NAME }}-setup.exe
+          
+      - name: Create AppCast
+        run: |
+          curl -L -o WinSparkle-0.8.1.zip https://github.com/vslavik/winsparkle/releases/download/v0.8.1/WinSparkle-0.8.1.zip
+          unzip WinSparkle-0.8.1.zip -d WinSparkle
+          echo "${{ secrets.SPARKLE_PRIV_KEY_WIN }}" > dsa_priv.pem
+          SIGNATURE=$(.\WinSparkle\bin\sign_update.bat build/out/${{ env.BINARY_NAME }}-setup.exe dsa_priv.pem)
+          VERSION=$(grep '^version *= *' Cargo.toml | head -n1 | sed 's/version *= *"\(.*\)"/\1/')
+          DATE=$(Get-Date -Format "ddd, dd MMM yyyy HH:mm:ss K")
+
+          cat > build/out/appcast.xml <<EOF
+          <?xml version="1.0" encoding="UTF-8"?>
+          <rss version="2.0" xmlns:sparkle="http://www.andymatuschak.org/xml-namespaces/sparkle">
+          <channel>
+          <title>PlumeImpactor</title>
+          <description>Most recent updates to PlumeImpactor</description>
+          <language>en</language>
+          <item>
+              <title>Version $VERSION</title>
+              <sparkle:version>$VERSION</sparkle:version>
+              <pubDate>$DATE</pubDate>
+                <enclosure url="https://github.com/khcrysalis/PlumeImpactor/releases/latest/download/${{ env.BINARY_NAME }}-setup.exe"
+                  sparkle:dsaSignature="$SIGNATURE"
+                  length="0"
+                  type="application/octet-stream" />
+              </item>
+          </channel>
+          </rss>
+          EOF
 
       - name: Upload Bundles
         uses: actions/upload-artifact@v4
@@ -247,8 +276,8 @@ jobs:
       - name: Setup Sparkle
         id: get_version
         run: |
-          curl -L -o Sparkle-2.4.2.tar.xz https://github.com/sparkle-project/Sparkle/releases/download/2.8.0/Sparkle-2.8.0.tar.xz
-          tar -xJf Sparkle-2.4.2.tar.xz
+          curl -L -o Sparkle-2.5.2.tar.xz https://github.com/sparkle-project/Sparkle/releases/download/2.5.2/Sparkle-2.5.2.tar.xz
+          tar -xJf Sparkle-2.5.2.tar.xz
           chmod +x ./bin/generate_appcast
                     
           VERSION=$(/usr/libexec/PlistBuddy -c "Print CFBundleShortVersionString" packages/*.app/Contents/Info.plist)
@@ -258,7 +287,7 @@ jobs:
         run: |
           echo "$SPARKLE_PRIVATE_KEY" | ./bin/generate_appcast --ed-key-file - --download-url-prefix https://github.com/khcrysalis/PlumeImpactor/releases/latest/download/ update/out/
         env:
-          SPARKLE_PRIVATE_KEY: ${{ secrets.SPARKLE_PRIVATE_KEY }}
+          SPARKLE_PRIVATE_KEY: ${{ secrets.SPARKLE_PRIV_KEY_MAC }}
 
       - name: Upload Universal DMG
         uses: actions/upload-artifact@v4
