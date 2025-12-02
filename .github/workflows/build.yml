@@ -279,9 +279,6 @@ jobs:
           curl -L -o Sparkle-2.5.2.tar.xz https://github.com/sparkle-project/Sparkle/releases/download/2.5.2/Sparkle-2.5.2.tar.xz
           tar -xJf Sparkle-2.5.2.tar.xz
           chmod +x ./bin/generate_appcast
-                    
-          VERSION=$(/usr/libexec/PlistBuddy -c "Print CFBundleShortVersionString" packages/*.app/Contents/Info.plist)
-          echo "VERSION=${VERSION}" >> $GITHUB_ENV
 
       - name: Make Appcast
         run: |
