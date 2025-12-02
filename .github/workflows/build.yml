@@ -214,6 +214,11 @@ jobs:
           mv build/universal/${{ env.BINARY_NAME }} build/dmg/${{ env.BUNDLE_NAME }}.app/Contents/MacOS/${{ env.BINARY_NAME }}
           # for udid
           mv build/udid build/dmg/${{ env.BUNDLE_NAME }}.app/Contents/MacOS/udid
+          # bump version
+          plutil -replace CFBundleVersion -string "${{ github.run_number }}" build/dmg/${{ env.BUNDLE_NAME }}.app/Contents/Info.plist
+          # get project version
+          VERSION=$(grep '^version *= *' Cargo.toml | head -n1 | sed 's/version *= *"\(.*\)"/\1/')
+          plutil -replace CFBundleShortVersionString -string "$VERSION" build/dmg/${{ env.BUNDLE_NAME }}.app/Contents/Info.plist
 
       - name: Codesign
         run: |
@@ -239,8 +244,26 @@ jobs:
           xcrun notarytool submit build/out/${{ env.BUNDLE_NAME }}.dmg --apple-id "${{ secrets.APPLE_ID_EMAIL }}" --password "${{ secrets.APPLE_ID_PASSWORD }}" --team-id "${{ secrets.APPLE_ID_TEAM }}" --wait
           xcrun stapler staple build/out/${{ env.BUNDLE_NAME }}.dmg
 
+      - name: Setup Sparkle
+        id: get_version
+        run: |
+          curl -L -o Sparkle-2.4.2.tar.xz https://github.com/sparkle-project/Sparkle/releases/download/2.8.0/Sparkle-2.8.0.tar.xz
+          tar -xJf Sparkle-2.4.2.tar.xz
+          chmod +x ./bin/generate_appcast
+                    
+          VERSION=$(/usr/libexec/PlistBuddy -c "Print CFBundleShortVersionString" packages/*.app/Contents/Info.plist)
+          echo "VERSION=${VERSION}" >> $GITHUB_ENV
+
+      - name: Make Appcast
+        run: |
+          echo "$SPARKLE_PRIVATE_KEY" | ./bin/generate_appcast --ed-key-file - --download-url-prefix https://github.com/khcrysalis/PlumeImpactor/releases/latest/download/ update/out/
+        env:
+          SPARKLE_PRIVATE_KEY: ${{ secrets.SPARKLE_PRIVATE_KEY }}
+
       - name: Upload Universal DMG
         uses: actions/upload-artifact@v4
         with:
           name: ${{ env.BINARY_NAME }}-macos-universal
-          path: build/out/${{ env.BUNDLE_NAME }}.dmg
+          path: |
+            build/out/${{ env.BUNDLE_NAME }}.dmg
+            build/out/appcast.xml

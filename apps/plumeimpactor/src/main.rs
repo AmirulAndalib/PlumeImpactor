@@ -11,9 +11,16 @@ use std::{
     path::{Path, PathBuf}
 };
 
+use sparkle_updater::Updater;
+
 #[tokio::main]
 async fn main() {
     _ = rustls::crypto::ring::default_provider().install_default().unwrap();
+    
+    {
+        let updater = Updater::new();
+        updater.check_for_updates();
+    }
 
     let _ = wxdragon::main(|_| {
         frame::PlumeFrame::new().show();

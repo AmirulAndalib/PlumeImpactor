@@ -28,6 +28,8 @@ fn embed_windows_manifest(name: &str) {
     {
         let mut res = winres::WindowsResource::new();
         res.set_icon("../../package/windows/icon.ico");
+        res.append_resource("DSAPub", "../../package/windows/dsa_pub.pem");
+        res.set_resource_type("DSAPub", "DSAPEM");
         res.compile().unwrap();
     }
 }
