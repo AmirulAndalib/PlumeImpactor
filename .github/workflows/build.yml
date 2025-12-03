@@ -287,7 +287,7 @@ jobs:
           tar -xJf Sparkle-2.8.1.tar.xz
           chmod +x ./bin/generate_appcast
           echo ${{ secrets.SPARKLE_PRIV_KEY_MAC }} > sparkle_priv_key
-          ./generate_keys -f ./sparkle_priv_key
+          ./bin/generate_keys -f ./sparkle_priv_key
           ./bin/generate_appcast --download-url-prefix https://github.com/khcrysalis/PlumeImpactor/releases/latest/download/ build/out/
 
       - name: Upload Universal DMG
