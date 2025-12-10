@@ -7,18 +7,14 @@ use plume_core::{MachO, MachOExt};
 pub struct MachArgs {
     #[arg(value_name = "BINARY")]
     pub binary: PathBuf,
-    
     #[arg(long)]
     pub entitlements: bool,
-    
     /// List all dylib dependencies
     #[arg(long)]
     pub list_dylibs: bool,
-    
     /// Add a dylib dependency (e.g., @rpath/MyLib.dylib)
     #[arg(long, value_name = "DYLIB_PATH")]
     pub add_dylib: Option<String>,
-    
     /// Replace an existing dylib dependency
     #[arg(long, value_names = &["OLD", "NEW"], num_args = 2)]
     pub replace_dylib: Option<Vec<String>>,

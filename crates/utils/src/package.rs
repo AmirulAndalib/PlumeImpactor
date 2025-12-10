@@ -77,6 +77,33 @@ impl Package {
         Ok(Bundle::new(app_dir)?)
     }
 
+    pub fn archive_package_bundle(self) -> Result<PathBuf, Error> {
+        let zip_file_path = self.stage_dir.join("resigned.ipa");
+        let file = fs::File::create(&zip_file_path)?;
+        let mut zip = zip::ZipWriter::new(file);
+
+        let options = zip::write::FileOptions::<zip::write::ExtendedFileOptions>::default().compression_method(zip::CompressionMethod::Stored);
+
+        let mut buffer = Vec::new();
+        for entry in &self.archive_entries {
+            let full_path = self.stage_dir.join(entry);
+
+            if full_path.is_file() {
+                zip.start_file(entry, options.clone())?;
+                let mut f = fs::File::open(&full_path)?;
+                f.read_to_end(&mut buffer)?;
+                std::io::Write::write_all(&mut zip, &buffer)?;
+                buffer.clear();
+            } else if full_path.is_dir() {
+                zip.add_directory(entry, options.clone())?;
+            }
+        }
+
+        zip.finish()?;
+        
+        Ok(zip_file_path)
+    }
+
     pub fn remove_package_stage(self) {
         fs::remove_dir_all(&self.stage_dir).ok();
     }
