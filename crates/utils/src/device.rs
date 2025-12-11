@@ -6,7 +6,7 @@ use idevice::lockdown::LockdownClient;
 use idevice::IdeviceService;
 use idevice::utils::installation;
 
-use crate::{Error, copy_dir_recursively};
+use crate::Error;
 use idevice::usbmuxd::UsbmuxdConnection;
 use idevice::house_arrest::HouseArrestClient;
 use idevice::afc::opcode::AfcFopenMode;
@@ -138,6 +138,7 @@ impl Device {
         use std::env;
         use tokio::fs;
         use uuid::Uuid;
+        use crate::copy_dir_recursively;
 
         let stage_dir = env::temp_dir().join(format!("plume_mac_stage_{}", Uuid::new_v4().to_string().to_uppercase()));
         let app_name = app_path.file_name().ok_or(Error::Other("Invalid app path".to_string()))?;

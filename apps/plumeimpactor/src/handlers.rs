@@ -147,6 +147,7 @@ impl PlumeFrameMessageHandler {
                 self.signer_settings = SignerOptions::default();
                 self.plume_frame.install_page.set_settings(&self.signer_settings, None);
                 self.plume_frame.add_ipa_button.enable(true);
+                self.handle_message(PlumeFrameMessage::InstallButtonStateChanged);
             }
             PlumeFrameMessage::AccountLogin(account) => {
                 let (first, last) = account.get_name();
@@ -226,7 +227,7 @@ impl PlumeFrameMessageHandler {
             PlumeFrameMessage::ArchivePathReady(archive_path) => {
                 let dialog = FileDialog::builder(&self.plume_frame.frame)
                     .with_message("Choose where to save the exported IPA")
-                    .with_style(FileDialogStyle::Save | FileDialogStyle::FileMustExist)
+                    .with_style(FileDialogStyle::Save)
                     .with_default_file("exported.ipa")
                     .with_wildcard(
                         "IPA files (*.ipa)|*.ipa"
