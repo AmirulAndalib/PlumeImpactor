@@ -21,6 +21,7 @@ pub enum PlumeFrameMessage {
     PackageDeselected,
     AccountLogin(Account),
     AccountDeleted,
+    InstallButtonStateChanged,
     AwaitingTwoFactorCode(std_mpsc::Sender<Result<String, String>>),
     RequestTeamSelection(Vec<String>, std_mpsc::Sender<Result<i32, String>>),
     WorkStarted,
@@ -100,7 +101,7 @@ impl PlumeFrameMessageHandler {
                     }
                 }
                 
-                self.plume_frame.install_page.install_button.enable(true);
+                self.handle_message(PlumeFrameMessage::InstallButtonStateChanged);
             }
             PlumeFrameMessage::DeviceDisconnected(device_id) => {
                 if let Some(index) = self
@@ -113,9 +114,7 @@ impl PlumeFrameMessageHandler {
                     self.usbmuxd_picker_reconcile_selection();
                 }
                 
-                if self.usbmuxd_device_list.is_empty() {
-                    self.plume_frame.install_page.install_button.enable(false);
-                }
+                self.handle_message(PlumeFrameMessage::InstallButtonStateChanged);
             }
             PlumeFrameMessage::PackageSelected(package) => {
                 if self.package_selected.is_some() {
@@ -176,6 +175,18 @@ impl PlumeFrameMessageHandler {
                 
                 self.account_credentials = None;
                 self.plume_frame.settings_dialog.set_account_name(None);
+            }
+            PlumeFrameMessage::InstallButtonStateChanged => {
+                let export = self.plume_frame.install_page.install_choice.get_selection() == Some(1);
+                let should_enable = !self.usbmuxd_device_list.is_empty() || export;
+
+                if export {
+                    self.plume_frame.install_page.install_button.set_label("Export");
+                } else {
+                    self.plume_frame.install_page.install_button.set_label("Install");
+                }
+
+                self.plume_frame.install_page.install_button.enable(should_enable);
             }
             PlumeFrameMessage::AwaitingTwoFactorCode(tx) => {
                 let result = self.plume_frame.create_single_field_dialog(

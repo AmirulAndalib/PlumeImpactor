@@ -524,6 +524,13 @@ impl PlumeFrame {
             }
         });
 
+        self.install_page.set_install_choice_select_handler({
+            let sender = sender.clone();
+            move || {
+                sender.send(PlumeFrameMessage::InstallButtonStateChanged).ok();
+            }
+        });
+
         // MARK: Work Page Handlers
 
         self.work_page.set_back_handler({

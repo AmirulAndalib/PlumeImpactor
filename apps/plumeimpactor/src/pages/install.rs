@@ -11,8 +11,6 @@ pub struct InstallPage {
     custom_identifier_textfield: TextCtrl,
     custom_version_textfield: TextCtrl,
     tweak_listbox: ListBox,
-    tweak_add_button: Button,
-    tweak_remove_button: Button,
     support_older_versions_checkbox: CheckBox,
     support_file_sharing_checkbox: CheckBox,
     ipad_fullscreen_checkbox: CheckBox,
@@ -20,7 +18,7 @@ pub struct InstallPage {
     pro_motion_checkbox: CheckBox,
     skip_registering_extensions_checkbox: CheckBox,
     adhoc_choice: Choice,
-    install_choice: Choice,
+    pub install_choice: Choice,
     
     original_name: Option<String>,
     original_identifier: Option<String>,
@@ -203,8 +201,6 @@ pub fn create_install_page(frame: &Frame) -> InstallPage {
         custom_identifier_textfield,
         custom_version_textfield,
         tweak_listbox,
-        tweak_add_button,
-        tweak_remove_button,
         support_older_versions_checkbox,
         support_file_sharing_checkbox,
         ipad_fullscreen_checkbox,
@@ -229,8 +225,8 @@ impl InstallPage {
         self.game_mode_checkbox.set_value(settings.features.support_game_mode);
         self.pro_motion_checkbox.set_value(settings.features.support_pro_motion);
         self.skip_registering_extensions_checkbox.set_value(settings.embedding.single_profile);
-        self.install_choice.set_selection(0);
-        self.adhoc_choice.set_selection(0);
+        self.install_choice.set_selection(1);
+        self.adhoc_choice.set_selection(1);
         self.tweak_listbox.clear();
         
         if let Some(package) = package {
@@ -329,6 +325,13 @@ impl InstallPage {
 
     pub fn set_install_handler(&self, on_install: impl Fn() + 'static) {
         self.install_button.on_click(move |_evt| {
+            on_install();
+        });
+    }
+    
+    pub fn set_install_choice_select_handler(&self, on_install: impl Fn() + 'static) {
+        let install_choice = self.install_choice.clone();
+        install_choice.on_selection_changed(move |_evt| {
             on_install();
         });
     }
