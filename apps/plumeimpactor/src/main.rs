@@ -1,7 +1,5 @@
 #![cfg_attr(not(debug_assertions), windows_subsystem = "windows")]
 
-use wxdragon::appearance::AppAppearance;
-
 mod frame;
 mod pages;
 mod handlers;
@@ -12,8 +10,12 @@ async fn main() {
     _ = rustls::crypto::ring::default_provider().install_default().unwrap();
 
     let _ = wxdragon::main(|_| {
-        if let Some(app) = wxdragon::app::get_app() {
-            app.set_appearance(wxdragon::appearance::Appearance::System);
+        #[cfg(target_os = "windows")]
+        {
+            use wxdragon::{AppAppearance, appearance::Appearance};
+            if let Some(app) = wxdragon::app::get_app() {
+                app.set_appearance(Appearance::Dark);
+            }
         }
 
         frame::PlumeFrame::new().show();
